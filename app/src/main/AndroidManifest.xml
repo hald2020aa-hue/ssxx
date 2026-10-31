@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- Needed to download source pages and images. -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Lets the app tell "no connection" apart from "site failed" and show cached data. -->
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <!-- Android 13+: runtime permission for the download-progress notification. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- Chapter downloads run as a foreground data-sync job. -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+    <!--
+      No storage permissions: downloads go to the app's own external-files folder, which needs none on any
+      Android version. (The original app asked for legacy READ/WRITE_EXTERNAL_STORAGE.)
+    -->
+
+    <application
+        android:name=".App"
+        android:allowBackup="false"
+        android:icon="@drawable/ic_launcher"
+        android:label="@string/app_name"
+        android:supportsRtl="true"
+        android:theme="@style/AppTheme"
+        android:usesCleartextTraffic="true"
+        tools:targetApi="35">
+        <!-- usesCleartextTraffic: users may add sites that only serve plain HTTP. Remove it to force HTTPS only. -->
+
+        <activity
+            android:name=".ui.SourcesActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <activity android:name=".ui.AddSourceActivity" android:windowSoftInputMode="adjustResize" />
+        <activity android:name=".ui.BrowseActivity" />
+        <activity android:name=".ui.MangaActivity" />
+        <activity android:name=".ui.ReaderActivity" android:configChanges="orientation|screenSize|keyboardHidden" />
+        <activity android:name=".ui.BrowserActivity" />
+
+        <!-- WorkManager's foreground service must declare its type on Android 14+. -->
+        <service
+            android:name="androidx.work.impl.foreground.SystemForegroundService"
+            android:foregroundServiceType="dataSync"
+            tools:node="merge" />
+    </application>
+</manifest>
