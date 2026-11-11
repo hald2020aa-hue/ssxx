@@ -8,8 +8,7 @@ on:
 
 jobs:
   build:
-    # Pinned: this image ships with the Android SDK preinstalled at $ANDROID_HOME.
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
@@ -20,11 +19,23 @@ jobs:
 
       - name: Install Android SDK packages
         run: |
-          echo "ANDROID_HOME=$ANDROID_HOME"
-          SDKM="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
-          test -x "$SDKM" || SDKM="$(command -v sdkmanager)"
-          yes | "$SDKM" --licenses > /dev/null || true
-          "$SDKM" "platforms;android-35" "build-tools;35.0.0" "platform-tools"
+          set -e
+          SDK="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-$HOME/android-sdk}}"
+          SDKM="$SDK/cmdline-tools/latest/bin/sdkmanager"
+          if [ ! -x "$SDKM" ]; then SDKM="$(command -v sdkmanager || true)"; fi
+          if [ -z "$SDKM" ]; then
+            echo "sdkmanager not found; downloading command-line tools"
+            mkdir -p "$SDK/cmdline-tools"
+            curl -fsSL -o /tmp/clt.zip https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip
+            unzip -q /tmp/clt.zip -d /tmp/clt
+            rm -rf "$SDK/cmdline-tools/latest"
+            mv /tmp/clt/cmdline-tools "$SDK/cmdline-tools/latest"
+            SDKM="$SDK/cmdline-tools/latest/bin/sdkmanager"
+          fi
+          echo "ANDROID_HOME=$SDK" >> "$GITHUB_ENV"
+          echo "ANDROID_SDK_ROOT=$SDK" >> "$GITHUB_ENV"
+          yes | "$SDKM" --sdk_root="$SDK" --licenses > /dev/null || true
+          "$SDKM" --sdk_root="$SDK" "platforms;android-35" "build-tools;35.0.0" "platform-tools"
 
       - uses: gradle/actions/setup-gradle@v4
         with:
