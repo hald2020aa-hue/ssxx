@@ -115,11 +115,15 @@ object UrlUtil {
 
     fun normalizeBase(input: String): String? {
         var s = input.trim()
-        if (s.isEmpty()) return null
+        if (s.isEmpty() || s.any { it.isWhitespace() }) return null
         if (!s.contains("://")) s = "https://$s"
         return try {
             val u = URL(s)
-            if (u.host.isNullOrBlank()) null else s.trimEnd('/')
+            val host = u.host
+            // java.net.URL is lenient about hosts, so check the shape of the name ourselves.
+            val validHost = !host.isNullOrBlank() &&
+                (host.startsWith("[") || Regex("^[A-Za-z0-9]([A-Za-z0-9._-]*[A-Za-z0-9])?$").matches(host))
+            if (!validHost || (u.protocol != "http" && u.protocol != "https")) null else s.trimEnd('/')
         } catch (e: Exception) {
             null
         }
